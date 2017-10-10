@@ -42,14 +42,19 @@ import io.requery.sql.RowCountException;
 import io.requery.sql.StatementExecutionException;
 import io.requery.test.model.Address;
 import io.requery.test.model.Child;
+import io.requery.test.model.ChildManyToManyCascade;
 import io.requery.test.model.ChildManyToManyNoCascade;
+import io.requery.test.model.ChildManyToOneCascade;
 import io.requery.test.model.ChildManyToOneNoCascade;
+import io.requery.test.model.ChildOneToManyCascade;
 import io.requery.test.model.ChildOneToManyNoCascade;
+import io.requery.test.model.ChildOneToOneCascade;
 import io.requery.test.model.ChildOneToOneNoCascade;
 import io.requery.test.model.Group;
 import io.requery.test.model.GroupType;
 import io.requery.test.model.Group_Person;
 import io.requery.test.model.Parent;
+import io.requery.test.model.ParentCascade;
 import io.requery.test.model.ParentNoCascade;
 import io.requery.test.model.Person;
 import io.requery.test.model.Phone;
@@ -1798,6 +1803,162 @@ public abstract class FunctionalTest extends RandomData {
         assertNotNull(child1Got);
         ChildManyToManyNoCascade child2Got = data.findByKey(ChildManyToManyNoCascade.class, 2);
         assertNotNull(child2Got);
+    }
+
+    @Test
+    public void testInsertCascade_OneToOne() {
+        // Create a parent entity with a one-to-one child
+        ChildOneToOneCascade child = new ChildOneToOneCascade();
+        child.setId(1);
+        child.setAttribute("a");
+        ParentCascade parent = new ParentCascade();
+        parent.setId(1);
+        parent.setOneToOne(child);
+        data.insert(parent);
+
+        // Assert that parent and child have been created
+        // NOTE: The entities used in this test are not cacheable, so that I'm sure that findByKey
+        // goes to database and test is not a false positive due to caching
+        assertEquals(parent, data.findByKey(ParentCascade.class, 1l));
+        assertEquals(child, data.findByKey(ChildOneToOneCascade.class, 1l));
+    }
+
+    @Test
+    public void testInsertCascade_ManyToOne() {
+        // Create a parent entity with a many-to-one child
+        ChildManyToOneCascade child = new ChildManyToOneCascade();
+        child.setId(1);
+        child.setAttribute("a");
+        ParentCascade parent = new ParentCascade();
+        parent.setId(1);
+        parent.setManyToOne(child);
+        data.insert(parent);
+
+        // Assert that parent and child have been created
+        // NOTE: The entities used in this test are not cacheable, so that I'm sure that findByKey
+        // goes to database and test is not a false positive due to caching
+        assertEquals(parent, data.findByKey(ParentCascade.class, 1l));
+        assertEquals(child, data.findByKey(ChildManyToOneCascade.class, 1l));
+    }
+
+    @Test
+    public void testInsertCascade_OneToMany() {
+        // Create a parent entity with a one-to-many child
+        ChildOneToManyCascade child = new ChildOneToManyCascade();
+        child.setId(1);
+        child.setAttribute("a");
+        ParentCascade parent = new ParentCascade();
+        parent.setId(1);
+        parent.getOneToMany().add(child);
+        data.insert(parent);
+
+        // Assert that parent and child have been created
+        // NOTE: The entities used in this test are not cacheable, so that I'm sure that findByKey
+        // goes to database and test is not a false positive due to caching
+        assertEquals(parent, data.findByKey(ParentCascade.class, 1l));
+        assertEquals(child, data.findByKey(ChildOneToManyCascade.class, 1l));
+    }
+
+    @Test
+    public void testInsertCascade_ManyToMany() {
+        // Create a parent entity with a many-to-many child
+        ChildManyToManyCascade child = new ChildManyToManyCascade();
+        child.setId(1);
+        child.setAttribute("a");
+        ParentCascade parent = new ParentCascade();
+        parent.setId(1);
+        parent.getManyToMany().add(child);
+        data.insert(parent);
+
+        // Assert that parent and child have been created
+        // NOTE: The entities used in this test are not cacheable, so that I'm sure that findByKey
+        // goes to database and test is not a false positive due to caching
+        assertEquals(parent, data.findByKey(ParentCascade.class, 1l));
+        assertEquals(child, data.findByKey(ChildManyToManyCascade.class, 1l));
+    }
+
+    @Test
+    public void testUpdateCascade_OneToOne() {
+        // Create a parent entity with a one-to-one child
+        ChildOneToOneCascade child = new ChildOneToOneCascade();
+        child.setId(1);
+        child.setAttribute("a");
+        ParentCascade parent = new ParentCascade();
+        parent.setId(1);
+        parent.setOneToOne(child);
+        data.insert(parent);
+
+        // Change an attribute in the child, and update the parent entity
+        child.setAttribute("b");
+        data.update(parent);
+
+        // Assert that child has been updated
+        // NOTE: The entities used in this test are not cacheable, so that I'm sure that findByKey
+        // goes to database and test is not a false positive due to caching
+        assertEquals(child, data.findByKey(ChildOneToOneCascade.class, 1l));
+    }
+
+    @Test
+    public void testUpdateCascade_ManyToOne() {
+        // Create a parent entity with a many-to-one child
+        ChildManyToOneCascade child = new ChildManyToOneCascade();
+        child.setId(1);
+        child.setAttribute("a");
+        ParentCascade parent = new ParentCascade();
+        parent.setId(1);
+        parent.setManyToOne(child);
+        data.insert(parent);
+
+        // Change an attribute in the child, and update the parent entity
+        child.setAttribute("b");
+        data.update(parent);
+
+        // Assert that child has been updated
+        // NOTE: The entities used in this test are not cacheable, to make sure that the cascade
+        // actually operated on the database.
+        assertEquals(child, data.findByKey(ChildManyToOneCascade.class, 1l));
+    }
+
+    @Test
+    public void testUpdateCascade_OneToMany() {
+        // Create a parent entity with a one-to-many child
+        ChildOneToManyCascade child = new ChildOneToManyCascade();
+        child.setId(1);
+        child.setAttribute("a");
+        ParentCascade parent = new ParentCascade();
+        parent.setId(1);
+        parent.getOneToMany().add(child);
+        data.insert(parent);
+
+        // Change an attribute in the child, and update the parent entity
+        child.setAttribute("b");
+        data.update(parent);
+
+        // Assert that child has been updated
+        // NOTE: The entities used in this test are not cacheable, so that I'm sure that findByKey
+        // goes to database and test is not a false positive due to caching
+        assertEquals(child, data.findByKey(ChildOneToManyCascade.class, 1l));
+    }
+
+    @Test
+    public void testUpdateCascade_ManyToMany() {
+        // Create a parent entity with a many-to-many child
+        ChildManyToManyCascade child = new ChildManyToManyCascade();
+        child.setId(1);
+        child.setAttribute("a");
+        ParentCascade parent = new ParentCascade();
+        parent.setId(1);
+        parent.getManyToMany().add(child);
+        data.insert(parent);
+
+        // Change an attribute in the child, and update the parent entity
+        child.setAttribute("b");
+        data.update(parent);
+
+        // Assert that child has been updated
+        // NOTE: The entities used in this test are not cacheable, so that I'm sure that findByKey
+        // goes to database and test is not a false positive due to caching
+        assertEquals(child, data.findByKey(ChildManyToManyCascade.class, 1l));
     }
 
 }
